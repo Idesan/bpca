@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Dec 27 18:42:10 2021
+Utility functions for bpca_impute.
 
-@author: 3G4321897
+@author: Tsuyoshi Ide (tide@us.ibm.com)
 """
 
 def show_missing_pattern_binary(df,title_str = 'missing pattern',

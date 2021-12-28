@@ -36,7 +36,7 @@ Data Imputation using Bayesian Principal Component Analysis (BPCA).
 
 Created on Sat Dec 25 17:41:18 2021
 
-@author: Tsuyoshi Ide (ide@ide-research.net)
+@author: Tsuyoshi Ide (tide@us.ibm.com)
 """
 def impute_bpca_ard(Xtest_samples_in_columns, n_PCs=None, eps=1.e-4,a_min=1e-4,
                    itr_max = 500, err_L_th = 1.e-4, err_x_th=1.e-4,                   
