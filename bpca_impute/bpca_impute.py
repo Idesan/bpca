@@ -97,6 +97,7 @@ def impute_bpca_ard(Xtest_samples_in_columns, n_PCs=None, eps=1.e-4,a_min=1e-4,
     if np.isnan(X).any():
         has_missing_entries = True
         x_filled_old = X[indices_nan].flatten()
+        x_filled_old[:] = np.Inf
     else:
         has_missing_entries = False
         x_filled_old = 0
@@ -197,7 +198,7 @@ def impute_bpca_ard(Xtest_samples_in_columns, n_PCs=None, eps=1.e-4,a_min=1e-4,
 
 
 def impute_transfer(Xtest_samples_in_columns,W,mu=None,
-                  eps=1.e-4, itr_max=500, err_L_th=1.e-4, 
+                  eps=1.e-4, itr_max=1000, err_L_th=1.e-4, 
                   err_x_th=1.e-4, reporting_interval='auto',verbose=True):
     '''
     Data imputation in transfer learning setting
@@ -205,7 +206,7 @@ def impute_transfer(Xtest_samples_in_columns,W,mu=None,
     Parameters
     ----------
     Xtest_samples_in_columns : 2D numpy array
-        Data matrix. Samples are treated as a column vectors..
+        Data matrix. Samples are treated as a column vectors.
     W : 2D numpy array
         Projection matrix.
     mu : 2D numpy array, optional
@@ -213,7 +214,7 @@ def impute_transfer(Xtest_samples_in_columns,W,mu=None,
     eps : float, optional
         DESCRIPTION. The default is 1.e-4.
     itr_max : int, optional
-        Max number of iteration. The default is 500.
+        Max number of iteration. The default is 1000.
     err_L_th : float, optional
         Error threshold of log likelihood. The default is 1.e-4.
     err_x_th : float, optional
@@ -245,17 +246,20 @@ def impute_transfer(Xtest_samples_in_columns,W,mu=None,
     
     digits_L = 1 + int(np.abs(np.log10(err_L_th))) # for showing progress
     digits_x = 1 + int(np.abs(np.log10(err_x_th))) # for showing progress
-       
+
     X = Xtest_samples_in_columns.copy()
+    
+    # Guarantees X(MxN),W(Mxd),mu(Mx1)
+    X,W,mu = verify_input_transfer_impute(X,W,mu) 
+    
     M,N = X.shape # N is the number of samples, M is dimensionality
-    n_PCs = W.shape[1]
+    n_PCs = W.shape[1] # d = n_PCs
+    
     if mu is None: # We will estimate mu using test data as well
         estimate_mu = True
         mu = np.nanmean(X,axis=1).reshape(-1,1)
     else:
         estimate_mu = False
-    
-    verify_input_transfer_impute(Xtest_samples_in_columns,W,mu)
     
     indices_nan = np.where(np.isnan(X))
     if np.isnan(X).any():
@@ -437,9 +441,11 @@ def recover_components_em_pca(W,mu,X):
 
     '''
     import numpy as np
+    
     if np.isnan(X).any():
         raise ValueError('X must not contain any nan')
-    verify_input_transfer_impute(X,W,mu)
+    
+    X,W,mu = verify_input_transfer_impute(X,W,mu)
     Q,R = np.linalg.qr(W)
     C,d,V = np.linalg.svd(Q.T.dot(X-mu),full_matrices=False)
     U = Q.dot(C)
@@ -915,14 +921,47 @@ def verify_input_transfer_impute(Xtest_samples_in_columns,W,mu):
 
     '''
     import numpy as np
+    
+    # Checking Xtest's format
     if not isinstance(Xtest_samples_in_columns,np.ndarray):
+        raise TypeError('data must be a Numpy array.')
+    elif Xtest_samples_in_columns.ndim == 1:
+        Xtest_samples_in_columns = Xtest_samples_in_columns.reshape(-1,1)
+    elif Xtest_samples_in_columns.ndim > 2:
         raise TypeError('data must be a 2D Numpy array.')
+    else:
+        Xtest_samples_in_columns = Xtest_samples_in_columns
     
     M,N = Xtest_samples_in_columns.shape
-    if (len(mu.shape)!=2):
-        raise TypeError('mu must be a ({},1)-sized 2D array'.format(M))
-    elif (mu.shape[0] != M) :
-        raise TypeError('mu and X have inconsistent dimension')
     
-    if W.shape[0] != M:
+    # Check if there is at least one all-nan variable
+    Nna = np.isnan(Xtest_samples_in_columns).sum(axis=1)
+    if (Nna == N).any():
+        all_nan_exists = True
+    else:
+        all_nan_exists = False
+    
+    
+    # Checking W's format
+    if not isinstance(W,np.ndarray):
+        raise TypeError('W must be a Numpy array.')
+    elif W.ndim == 1:
+        W = W.reshape(-1,1)
+    elif W.shape[0] != M:
         raise TypeError('W and X have inconsistent sizes')  
+    
+    # Checking mu's format (if it is not None)
+    if mu is not None:
+        if not isinstance(mu, np.ndarray):
+            raise TypeError('mu must be None or a Numpy array.')
+        elif mu.ndim == 1:
+            mu = mu.reshape(-1,1)
+        elif mu.ndim > 2:
+            raise TypeError('mu must be a 1D or 2D Numpy array.')
+        
+        if mu.shape[0] != M:
+            raise TypeError('mu must be a ({},1)-sized 2D array'.format(M))
+    elif all_nan_exists:
+        raise ValueError('mu must be provided if any of the variables is all nan.')
+    
+    return Xtest_samples_in_columns,W,mu
