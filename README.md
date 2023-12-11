@@ -2,7 +2,7 @@
 
 This repo presents a Python implementation of the **Adaptation-Classification Framework** introduced by
 
-> Takumi Kitamoto, Tsuyoshi Idé, Yuta Tezuka, Norio Wada, Yui Shibayama, Yuya Tsurutani, Tomoko Takiguchi, Sachiko Suematsu, Kei Omata, Yoshikiyo Ono, Ryo Morimoto, Yuto Yamazaki, Jun Saito, Hironobu Sasano, Fumitoshi Satoh, and Tetsuo Nishikawa, Identifying Primary Aldosteronism Patients who Require Adrenal Venous Sampling: A Multi-center Study, Scientific Reports, to appear.
+> Kitamoto, T., Idé, T., Tezuka, Y. et al., "Identifying primary aldosteronism patients who require adrenal venous sampling: a multi-center study," Scientific Reports 13, 21722 (2023) [[link](https://doi.org/10.1038/s41598-023-47967-z)].
 
 The primary goal of this framework is to identify primary aldosteronism patients who could benefit from specific surgical treatment.
 
